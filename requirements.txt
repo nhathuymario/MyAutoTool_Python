@@ -1,0 +1,7 @@
+pyautogui
+pynput
+keyboard
+opencv-python
+pillow
+numpy
+loguru
