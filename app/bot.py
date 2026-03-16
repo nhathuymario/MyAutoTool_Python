@@ -2,35 +2,29 @@ from __future__ import annotations
 
 import threading
 import time
-from dataclasses import dataclass
-from typing import Callable, Dict, Optional, Tuple
+from typing import Callable, Dict, Optional
 
-from .adb_client import AdbClient
-from .image_matcher import ImageMatcher
+from app.adb_client import AdbClient
+from app.game_bot import GameBot
 
 LogFn = Callable[[str], None]
 
 
-@dataclass
-class BotSettings:
-    threshold: float
-    loop_delay_seconds: float
-    action_delay_seconds: float
-    scan_region: Optional[Tuple[int, int, int, int]]
-    auto_reconnect: bool
-    features: Dict[str, bool]
-    templates: Dict[str, str]
-
-
-class GameBot:
-    def __init__(self, adb_client: AdbClient, matcher: ImageMatcher, logger: LogFn = print):
-        self.adb = adb_client
-        self.matcher = matcher
+class BotManager:
+    def __init__(self, adb: AdbClient, image_dir: str, logger: LogFn = print):
+        self.adb = adb
         self.logger = logger
-        self._thread: Optional[threading.Thread] = None
+        self.game = GameBot(adb=adb, image_dir=image_dir, logger=logger)
+
         self._running = False
-        self._lock = threading.Lock()
-        self._settings: Optional[BotSettings] = None
+        self._thread: Optional[threading.Thread] = None
+
+        self.features: Dict[str, bool] = {
+            "battle": True,
+            "ready": True,
+            "skip": True,
+            "next_stage": True,
+        }
 
     def log(self, message: str) -> None:
         self.logger(message)
@@ -38,88 +32,71 @@ class GameBot:
     def is_running(self) -> bool:
         return self._running
 
-    def start(self, settings: BotSettings) -> bool:
-        with self._lock:
-            if self._running:
-                self.log("[Bot] Bot đang chạy rồi.")
-                return False
-            self._running = True
-            self._settings = settings
-            self._thread = threading.Thread(target=self._loop, daemon=True)
-            self._thread.start()
-            self.log("[Bot] Đã start bot.")
-            return True
+    def set_features(self, features: Dict[str, bool]) -> None:
+        self.features.update(features)
+        self.log(f"[Bot] Features: {self.features}")
+
+    def start(self) -> None:
+        if self._running:
+            self.log("[Bot] Đang chạy rồi.")
+            return
+
+        device = self.adb.auto_connect()
+        if not device:
+            self.log("[Bot] Không kết nối được ADB device.")
+            return
+
+        self.log(f"[Bot] Device: {device}")
+
+        try:
+            result = self.adb.start_app(
+                "com.devsisters.ck",
+                "com.devsisters.plugin.OvenUnityPlayerActivity"
+            )
+
+            self.log(f"[Bot] start_app rc={result.returncode}")
+            if result.stdout:
+                self.log(f"[Bot] stdout: {result.stdout.strip()}")
+            if result.stderr:
+                self.log(f"[Bot] stderr: {result.stderr.strip()}")
+
+            self.log("[Bot] Đã gửi lệnh mở game.")
+            time.sleep(8)
+        except Exception as exc:
+            self.log(f"[Bot] Không mở được game: {exc}")
+            return
+
+        self._running = True
+        self._thread = threading.Thread(target=self._loop, daemon=True)
+        self._thread.start()
+        self.log("[Bot] Đã start.")
 
     def stop(self) -> None:
-        with self._lock:
-            self._running = False
+        self._running = False
         self.log("[Bot] Đã gửi lệnh stop.")
 
-    def _ensure_device(self) -> bool:
-        if self.adb.device_id:
-            return True
-        device = self.adb.auto_connect()
-        return device is not None
-
     def _loop(self) -> None:
-        self.log("[Bot] Bot thread started")
-        while self._running:
-            settings = self._settings
-            if settings is None:
-                self.log("[Bot] Thiếu settings, bot dừng.")
-                self._running = False
-                break
+        self.log("[Bot] Bot loop started.")
 
-            try:
-                if not self._ensure_device():
-                    raise RuntimeError("Không kết nối được LDPlayer ADB")
+        try:
+            ok = self.game.wait_until_game_ready(timeout=20)
+            if not ok:
+                self.log("[Bot] Không thấy nút thao tác, vẫn tiếp tục chạy thử.")
 
-                screen = self.adb.screencap()
-                clicked = self._run_actions(screen, settings)
-                if not clicked:
-                    self.log("[Bot] Không tìm thấy action nào.")
-                    time.sleep(settings.loop_delay_seconds)
+            while self._running:
+                try:
+                    acted = self.game.run_priority_once(self.features)
+                    if not acted:
+                        self.log("[Bot] Không thấy ảnh nào để click.")
+                        time.sleep(1.0)
+                except Exception as exc:
+                    self.log(f"[Bot] Error: {exc}")
 
-            except Exception as exc:
-                self.log(f"[Bot] Error: {exc}")
-                if settings.auto_reconnect:
-                    self.adb.device_id = None
-                    self.log("[Bot] Đang thử reconnect ADB...")
-                    self.adb.auto_connect()
-                time.sleep(max(1.0, settings.loop_delay_seconds))
+                    device = self.adb.auto_connect()
+                    if device:
+                        self.log(f"[Bot] Reconnected: {device}")
+                    time.sleep(1.5)
 
-        self.log("[Bot] Bot stopped")
-
-    def _run_actions(self, screen, settings: BotSettings) -> bool:
-        clicked_any = False
-        for key, label in [("build", "Build"), ("collect", "Collect"), ("upgrade", "Upgrade")]:
-            if not settings.features.get(key, False):
-                continue
-            template_path = settings.templates.get(key, "")
-            if not template_path:
-                continue
-
-            try:
-                match = self.matcher.find_template(
-                    screen_bgr=screen,
-                    template_path=template_path,
-                    threshold=settings.threshold,
-                    region=settings.scan_region,
-                )
-            except Exception as exc:
-                self.log(f"[{label}] Error: {exc}")
-                continue
-
-            if not match:
-                self.log(f"[{label}] Not found")
-                continue
-
-            try:
-                self.adb.tap(match.x, match.y)
-                self.log(f"[{label}] Clicked at ({match.x}, {match.y}) score={match.score:.3f}")
-                clicked_any = True
-                time.sleep(settings.action_delay_seconds)
-            except Exception as exc:
-                self.log(f"[{label}] Error: {exc}")
-
-        return clicked_any
+        finally:
+            self._running = False
+            self.log("[Bot] Bot loop stopped.")

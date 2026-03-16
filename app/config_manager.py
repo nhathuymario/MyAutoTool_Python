@@ -23,11 +23,15 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "action_delay_seconds": 0.35,
     "auto_reconnect": True,
     "templates": {
-        "build": "assets/images/build.png",
-        "collect": "assets/images/collect.png",
-        "upgrade": "assets/images/upgrade.png",
-        "game_icon": "assets/images/game_icon.png",
-    },
+    "game_icon": "assets/images/game_icon.png",
+
+    "battle": "assets/images/battle.png",
+    "battle1": "assets/images/battle1.png",
+    "ready": "assets/images/ready.png",
+    "victory": "assets/images/victory.png",
+    "next_stage": "assets/images/next_stage.png",
+    "skip": "assets/images/skip.png"
+},
     "features": {
         "build": True,
         "collect": True,
