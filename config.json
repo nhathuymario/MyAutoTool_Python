@@ -1,7 +1,7 @@
 {
-  "ldplayer_path": "C:\\LDPlayer\\LDPlayer9\\dnplayer.exe",
-  "adb_path": "C:\\LDPlayer\\LDPlayer9\\adb.exe",
-  "ldconsole_path": "C:\\LDPlayer\\LDPlayer9\\ldconsole.exe",
+  "ldplayer_path": "E:\\LDPlayer\\LDPlayer9\\dnplayer.exe",
+  "adb_path": "E:\\LDPlayer\\LDPlayer9\\adb.exe",
+  "ldconsole_path": "E:\\LDPlayer\\LDPlayer9\\ldconsole.exe",
   "window_title_keywords": ["LDPlayer", "dnplayer"],
   "device_ip": "127.0.0.1",
   "candidate_ports": [5555, 5556, 5557, 5558, 5559, 5565, 5575],
