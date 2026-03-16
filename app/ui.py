@@ -100,10 +100,6 @@ class AutoToolUI:
 
     def _build_group_bot(self, parent) -> None:
         frame = self._make_group(parent, "Bot")
-        ttk.Checkbutton(frame, text="Auto Battle", variable=self.app.var_feature_battle).pack(anchor="w", padx=8, pady=2)
-        ttk.Checkbutton(frame, text="Auto Ready", variable=self.app.var_feature_ready).pack(anchor="w", padx=8, pady=2)
-        ttk.Checkbutton(frame, text="Auto Skip", variable=self.app.var_feature_skip).pack(anchor="w", padx=8, pady=2)
-        ttk.Checkbutton(frame, text="Auto Next Stage", variable=self.app.var_feature_next_stage).pack(anchor="w", padx=8, pady=2)
         ttk.Button(frame, text="Start Bot", command=self.app.handle_start_bot).pack(fill="x", padx=8, pady=4)
         ttk.Button(frame, text="Stop Bot", command=self.app.handle_stop_bot).pack(fill="x", padx=8, pady=4)
 

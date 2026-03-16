@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import threading
 import time
-from typing import Callable, Dict, Optional
+from typing import Callable, Optional
 
 from app.adb_client import AdbClient
 from app.game_bot import GameBot
@@ -11,92 +11,81 @@ LogFn = Callable[[str], None]
 
 
 class BotManager:
+
     def __init__(self, adb: AdbClient, image_dir: str, logger: LogFn = print):
+
         self.adb = adb
         self.logger = logger
-        self.game = GameBot(adb=adb, image_dir=image_dir, logger=logger)
+        self.game = GameBot(adb, image_dir, logger)
 
-        self._running = False
-        self._thread: Optional[threading.Thread] = None
+        self.running = False
+        self.thread: Optional[threading.Thread] = None
 
-        self.features: Dict[str, bool] = {
-            "battle": True,
-            "ready": True,
-            "skip": True,
-            "next_stage": True,
-        }
+    def log(self, msg: str):
+        self.logger(msg)
 
-    def log(self, message: str) -> None:
-        self.logger(message)
+    def is_running(self):
+        return self.running
 
-    def is_running(self) -> bool:
-        return self._running
+    def start(self):
 
-    def set_features(self, features: Dict[str, bool]) -> None:
-        self.features.update(features)
-        self.log(f"[Bot] Features: {self.features}")
-
-    def start(self) -> None:
-        if self._running:
-            self.log("[Bot] Đang chạy rồi.")
+        if self.running:
+            self.log("[Bot] đã chạy")
             return
 
         device = self.adb.auto_connect()
+
         if not device:
-            self.log("[Bot] Không kết nối được ADB device.")
+            self.log("[Bot] không kết nối được adb")
             return
 
-        self.log(f"[Bot] Device: {device}")
+        self.log(f"[Bot] device: {device}")
 
         try:
-            result = self.adb.start_app(
+
+            self.adb.start_app(
                 "com.devsisters.ck",
                 "com.devsisters.plugin.OvenUnityPlayerActivity"
             )
 
-            self.log(f"[Bot] start_app rc={result.returncode}")
-            if result.stdout:
-                self.log(f"[Bot] stdout: {result.stdout.strip()}")
-            if result.stderr:
-                self.log(f"[Bot] stderr: {result.stderr.strip()}")
+            self.log("[Bot] mở game")
 
-            self.log("[Bot] Đã gửi lệnh mở game.")
-            time.sleep(8)
-        except Exception as exc:
-            self.log(f"[Bot] Không mở được game: {exc}")
-            return
+            time.sleep(6)
 
-        self._running = True
-        self._thread = threading.Thread(target=self._loop, daemon=True)
-        self._thread.start()
-        self.log("[Bot] Đã start.")
+        except Exception as e:
+            self.log(f"[Bot] lỗi mở game: {e}")
 
-    def stop(self) -> None:
-        self._running = False
-        self.log("[Bot] Đã gửi lệnh stop.")
+        self.running = True
 
-    def _loop(self) -> None:
-        self.log("[Bot] Bot loop started.")
+        self.thread = threading.Thread(
+            target=self.loop,
+            daemon=True
+        )
 
-        try:
-            ok = self.game.wait_until_game_ready(timeout=20)
-            if not ok:
-                self.log("[Bot] Không thấy nút thao tác, vẫn tiếp tục chạy thử.")
+        self.thread.start()
 
-            while self._running:
-                try:
-                    acted = self.game.run_priority_once(self.features)
-                    if not acted:
-                        self.log("[Bot] Không thấy ảnh nào để click.")
-                        time.sleep(1.0)
-                except Exception as exc:
-                    self.log(f"[Bot] Error: {exc}")
+    def stop(self):
 
-                    device = self.adb.auto_connect()
-                    if device:
-                        self.log(f"[Bot] Reconnected: {device}")
-                    time.sleep(1.5)
+        self.running = False
+        self.log("[Bot] stop")
 
-        finally:
-            self._running = False
-            self.log("[Bot] Bot loop stopped.")
+    def loop(self):
+
+        self.log("[Bot] loop started")
+
+        while self.running:
+
+            try:
+
+                acted = self.game.run_once()
+
+                if not acted:
+                    time.sleep(0.5)
+
+            except Exception as e:
+
+                self.log(f"[Bot] lỗi: {e}")
+
+                time.sleep(1)
+
+        self.log("[Bot] loop stopped")
