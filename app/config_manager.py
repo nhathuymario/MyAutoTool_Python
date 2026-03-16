@@ -24,7 +24,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "auto_reconnect": True,
     "templates": {
     "game_icon": "assets/images/game_icon.png",
-
+    "level": "assets/images/level.png",
     "battle": "assets/images/battle.png",
     "battle1": "assets/images/battle1.png",
     "ready": "assets/images/ready.png",

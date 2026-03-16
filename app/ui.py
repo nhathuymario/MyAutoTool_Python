@@ -92,11 +92,11 @@ class AutoToolUI:
         ttk.Button(frame, text="Open Game by Icon", command=self.app.handle_open_game_by_icon).pack(fill="x", padx=8, pady=4)
         ttk.Button(frame, text="Save Screenshot", command=self.app.handle_save_screenshot).pack(fill="x", padx=8, pady=4)
 
-        ttk.Button(frame, text="Test Battle", command=lambda: self.app.handle_test_template("battle", "Battle")).pack(fill="x", padx=8, pady=4)
-        ttk.Button(frame, text="Test Ready", command=lambda: self.app.handle_test_template("ready", "Ready")).pack(fill="x", padx=8, pady=4)
-        ttk.Button(frame, text="Test Victory", command=lambda: self.app.handle_test_template("victory", "Victory")).pack(fill="x", padx=8, pady=4)
-        ttk.Button(frame, text="Test Next Stage", command=lambda: self.app.handle_test_template("next_stage", "Next Stage")).pack(fill="x", padx=8, pady=4)
-        ttk.Button(frame, text="Test Skip", command=lambda: self.app.handle_test_template("skip", "Skip")).pack(fill="x", padx=8, pady=4)
+        # ttk.Button(frame, text="Test Battle", command=lambda: self.app.handle_test_template("battle", "Battle")).pack(fill="x", padx=8, pady=4)
+        # ttk.Button(frame, text="Test Ready", command=lambda: self.app.handle_test_template("ready", "Ready")).pack(fill="x", padx=8, pady=4)
+        # ttk.Button(frame, text="Test Victory", command=lambda: self.app.handle_test_template("victory", "Victory")).pack(fill="x", padx=8, pady=4)
+        # ttk.Button(frame, text="Test Next Stage", command=lambda: self.app.handle_test_template("next_stage", "Next Stage")).pack(fill="x", padx=8, pady=4)
+        # ttk.Button(frame, text="Test Skip", command=lambda: self.app.handle_test_template("skip", "Skip")).pack(fill="x", padx=8, pady=4)
 
     def _build_group_bot(self, parent) -> None:
         frame = self._make_group(parent, "Bot")

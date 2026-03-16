@@ -76,5 +76,11 @@ class GameBot:
 
         if self.tap_if_found(screen, "victory"):
             return True
-
+        
+        if self.tap_if_found(screen, "battle1"):
+            return True
+        
+        if self.tap_if_found(screen, "level"):
+            return True
+        
         return False
