@@ -68,19 +68,52 @@ class GameBot:
         if self.tap_if_found(screen, "next_stage"):
             return True
 
-        if self.tap_if_found(screen, "ready"):
-            return True
-
-        if self.tap_if_found(screen, "battle"):
+        if self.tap_if_found(screen, "exit"):
             return True
 
         if self.tap_if_found(screen, "victory"):
+            return True
+
+        if self.tap_if_found(screen, "level"):
+            return True
+        
+        if self.tap_if_found(screen, "level1"):
+            return True
+        
+        if self.tap_if_found(screen, "level2"):
+            return True
+        
+        if self.tap_if_found(screen, "level3"):
+            return True
+        
+        if self.tap_if_found(screen, "level4"):
+            return True
+        
+        if self.tap_if_found(screen, "level5"):
+            return True
+        
+        if self.tap_if_found(screen, "level6"):
+            return True
+        
+        if self.tap_if_found(screen, "claim"):
+            return True
+        
+        if self.tap_if_found(screen, "tap"):
             return True
         
         if self.tap_if_found(screen, "battle1"):
             return True
         
-        if self.tap_if_found(screen, "level"):
+        if self.tap_if_found(screen, "ready"):
+            return True
+        
+        if self.tap_if_found(screen, "battle"):
+            return True
+        
+        if self.tap_if_found(screen, "up"):
+            return True
+        
+        if self.tap_if_found(screen, "cancel"):
             return True
         
         return False
