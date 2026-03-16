@@ -1,102 +1,125 @@
-import os
+from __future__ import annotations
+
+import threading
 import time
-from typing import Any
+from dataclasses import dataclass
+from typing import Callable, Dict, Optional, Tuple
 
-from app.adb_client import AdbClient
-from app.screen_capture import capture_screen
-from app.image_match import find_template_center
+from .adb_client import AdbClient
+from .image_matcher import ImageMatcher
+
+LogFn = Callable[[str], None]
 
 
-class LdPlayerBot:
-    def __init__(
-        self,
-        adb: AdbClient,
-        screen_path: str,
-        steps: list[dict[str, Any]],
-        threshold: float = 0.85,
-        scan_interval: float = 1.0,
-        max_actions: int = 100,
-    ):
-        self.adb = adb
-        self.screen_path = screen_path
-        self.steps = steps
-        self.threshold = threshold
-        self.scan_interval = scan_interval
-        self.max_actions = max_actions
+@dataclass
+class BotSettings:
+    threshold: float
+    loop_delay_seconds: float
+    action_delay_seconds: float
+    scan_region: Optional[Tuple[int, int, int, int]]
+    auto_reconnect: bool
+    features: Dict[str, bool]
+    templates: Dict[str, str]
 
-        self.running = False
-        self.total_actions = 0
-        self.current_step_index = 0
+
+class GameBot:
+    def __init__(self, adb_client: AdbClient, matcher: ImageMatcher, logger: LogFn = print):
+        self.adb = adb_client
+        self.matcher = matcher
+        self.logger = logger
+        self._thread: Optional[threading.Thread] = None
+        self._running = False
+        self._lock = threading.Lock()
+        self._settings: Optional[BotSettings] = None
 
     def log(self, message: str) -> None:
-        print(message)
+        self.logger(message)
 
-    def enabled_steps(self) -> list[dict[str, Any]]:
-        return [step for step in self.steps if step.get("enabled", True)]
+    def is_running(self) -> bool:
+        return self._running
 
-    def start(self) -> None:
-        self.running = True
-        self.total_actions = 0
-        self.current_step_index = 0
-        self.log("Bot started")
-
-        steps = self.enabled_steps()
-        if not steps:
-            self.log("No enabled steps")
-            return
-
-        while self.running:
-            if self.total_actions >= self.max_actions:
-                self.log(f"Reached max actions: {self.max_actions}")
-                break
-
-            steps = self.enabled_steps()
-            if not steps:
-                self.log("No enabled steps")
-                break
-
-            step = steps[self.current_step_index % len(steps)]
-            self.run_step(step)
-
-            time.sleep(self.scan_interval)
-
-        self.running = False
-        self.log("Bot stopped")
+    def start(self, settings: BotSettings) -> bool:
+        with self._lock:
+            if self._running:
+                self.log("[Bot] Bot đang chạy rồi.")
+                return False
+            self._running = True
+            self._settings = settings
+            self._thread = threading.Thread(target=self._loop, daemon=True)
+            self._thread.start()
+            self.log("[Bot] Đã start bot.")
+            return True
 
     def stop(self) -> None:
-        self.running = False
+        with self._lock:
+            self._running = False
+        self.log("[Bot] Đã gửi lệnh stop.")
 
-    def run_step(self, step: dict[str, Any]) -> None:
-        step_name = step["name"]
-        image_path = step["image"]
+    def _ensure_device(self) -> bool:
+        if self.adb.device_id:
+            return True
+        device = self.adb.auto_connect()
+        return device is not None
 
-        if not os.path.exists(image_path):
-            self.log(f"[{step_name}] Missing template: {image_path}")
-            self.current_step_index += 1
-            return
+    def _loop(self) -> None:
+        self.log("[Bot] Bot thread started")
+        while self._running:
+            settings = self._settings
+            if settings is None:
+                self.log("[Bot] Thiếu settings, bot dừng.")
+                self._running = False
+                break
 
-        try:
-            capture_screen(self.adb, self.screen_path)
-            match = find_template_center(
-                self.screen_path,
-                image_path,
-                self.threshold
-            )
+            try:
+                if not self._ensure_device():
+                    raise RuntimeError("Không kết nối được LDPlayer ADB")
 
-            if match is None:
-                self.log(f"[{step_name}] Not found")
-                return
+                screen = self.adb.screencap()
+                clicked = self._run_actions(screen, settings)
+                if not clicked:
+                    self.log("[Bot] Không tìm thấy action nào.")
+                    time.sleep(settings.loop_delay_seconds)
 
-            x, y, score = match
-            self.log(f"[{step_name}] Found at ({x}, {y}) score={score:.3f}")
+            except Exception as exc:
+                self.log(f"[Bot] Error: {exc}")
+                if settings.auto_reconnect:
+                    self.adb.device_id = None
+                    self.log("[Bot] Đang thử reconnect ADB...")
+                    self.adb.auto_connect()
+                time.sleep(max(1.0, settings.loop_delay_seconds))
 
-            out, err, code = self.adb.tap(x, y)
-            if code == 0:
-                self.total_actions += 1
-                self.log(f"[{step_name}] Tapped | total={self.total_actions}")
-                self.current_step_index += 1
-            else:
-                self.log(f"[{step_name}] Tap failed: {err or out}")
+        self.log("[Bot] Bot stopped")
 
-        except Exception as exc:
-            self.log(f"[{step_name}] Error: {exc}")
+    def _run_actions(self, screen, settings: BotSettings) -> bool:
+        clicked_any = False
+        for key, label in [("build", "Build"), ("collect", "Collect"), ("upgrade", "Upgrade")]:
+            if not settings.features.get(key, False):
+                continue
+            template_path = settings.templates.get(key, "")
+            if not template_path:
+                continue
+
+            try:
+                match = self.matcher.find_template(
+                    screen_bgr=screen,
+                    template_path=template_path,
+                    threshold=settings.threshold,
+                    region=settings.scan_region,
+                )
+            except Exception as exc:
+                self.log(f"[{label}] Error: {exc}")
+                continue
+
+            if not match:
+                self.log(f"[{label}] Not found")
+                continue
+
+            try:
+                self.adb.tap(match.x, match.y)
+                self.log(f"[{label}] Clicked at ({match.x}, {match.y}) score={match.score:.3f}")
+                clicked_any = True
+                time.sleep(settings.action_delay_seconds)
+            except Exception as exc:
+                self.log(f"[{label}] Error: {exc}")
+
+        return clicked_any

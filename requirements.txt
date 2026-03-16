@@ -5,3 +5,6 @@ opencv-python
 pillow
 numpy
 loguru
+opencv-python
+pygetwindow
+pywin32; platform_system == "Windows"
