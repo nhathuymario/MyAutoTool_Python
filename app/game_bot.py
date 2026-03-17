@@ -113,7 +113,18 @@ class GameBot:
         if self.tap_if_found(screen, "up"):
             return True
         
+        if self.tap_if_found(screen, "dots"):
+            return True
+        
+       
+        if self.tap_if_found(screen, "dot"):
+            self.log("Đã nhấn Cancel, đợi thêm 5 giây...") # Thêm log cho dễ theo dõi
+            time.sleep(10)  # Nghỉ thêm 5 giây (thay số 5 bằng thời gian bạn muốn)
+            return True
+        
         if self.tap_if_found(screen, "cancel"):
+            self.log("Đã nhấn Cancel, đợi thêm 5 giây...") # Thêm log cho dễ theo dõi
+            time.sleep(5)  # Nghỉ thêm 5 giây (thay số 5 bằng thời gian bạn muốn)
             return True
         
         return False

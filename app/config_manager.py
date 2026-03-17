@@ -30,6 +30,8 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "cancel": "assets/images/cancel.png",
     "up": "assets/images/up.png",
     "tap": "assets/images/tap.png",
+    "dots": "assets/images/dots.png",
+    "dot": "assets/images/dot.png",
     "level2": "assets/images/level2.png",
     "level3": "assets/images/level3.png",
     "level4": "assets/images/level4.png",
