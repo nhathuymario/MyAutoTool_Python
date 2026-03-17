@@ -21,6 +21,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "default_threshold": 0.75,
     "loop_delay_seconds": 1.0,
     "action_delay_seconds": 0.35,
+    "selected_feature": "adventure",
     "auto_reconnect": True,
     "templates": {
     "game_icon": "assets/images/game_icon.png",

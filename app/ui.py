@@ -27,7 +27,7 @@ class AutoToolUI:
         main_frame = tk.Frame(self.root)
         main_frame.pack(fill="both", expand=True)
 
-        left = tk.Frame(main_frame, bg="#f4f4f4", width=360)
+        left = tk.Frame(main_frame, bg="#f4f4f4", width=380)
         left.pack(side="left", fill="y")
         left.pack_propagate(False)
 
@@ -68,6 +68,20 @@ class AutoToolUI:
             textvariable=self.app.var_device_id,
             bg="white",
             fg="blue"
+        ).pack(side="left", padx=(6, 16))
+
+        tk.Label(
+            status_frame,
+            text="Chức năng:",
+            bg="white",
+            font=("Arial", 10, "bold")
+        ).pack(side="left")
+
+        tk.Label(
+            status_frame,
+            textvariable=self.app.var_feature_name,
+            bg="white",
+            fg="green"
         ).pack(side="left", padx=(6, 0))
 
         log_box = tk.Text(right, wrap="word", font=("Consolas", 10))
@@ -81,30 +95,83 @@ class AutoToolUI:
 
     def _build_group_ldplayer(self, parent) -> None:
         frame = self._make_group(parent, "LDPlayer")
-        ttk.Button(frame, text="Open LDPlayer", command=self.app.handle_open_ldplayer).pack(fill="x", padx=8, pady=4)
-        ttk.Button(frame, text="Focus LDPlayer", command=self.app.handle_focus_ldplayer).pack(fill="x", padx=8, pady=4)
-        ttk.Button(frame, text="List Instances", command=self.app.handle_list_instances).pack(fill="x", padx=8, pady=4)
-        ttk.Button(frame, text="Connect ADB", command=self.app.handle_connect_adb).pack(fill="x", padx=8, pady=4)
+
+        ttk.Button(
+            frame,
+            text="Open LDPlayer",
+            command=self.app.handle_open_ldplayer
+        ).pack(fill="x", padx=8, pady=4)
+
+        ttk.Button(
+            frame,
+            text="Focus LDPlayer",
+            command=self.app.handle_focus_ldplayer
+        ).pack(fill="x", padx=8, pady=4)
+
+        ttk.Button(
+            frame,
+            text="List Instances",
+            command=self.app.handle_list_instances
+        ).pack(fill="x", padx=8, pady=4)
+
+        ttk.Button(
+            frame,
+            text="Connect ADB",
+            command=self.app.handle_connect_adb
+        ).pack(fill="x", padx=8, pady=4)
 
     def _build_group_game(self, parent) -> None:
         frame = self._make_group(parent, "Game")
-        ttk.Button(frame, text="Open Game by Package", command=self.app.handle_open_game_by_package).pack(fill="x", padx=8, pady=4)
-        ttk.Button(frame, text="Open Game by Icon", command=self.app.handle_open_game_by_icon).pack(fill="x", padx=8, pady=4)
-        ttk.Button(frame, text="Save Screenshot", command=self.app.handle_save_screenshot).pack(fill="x", padx=8, pady=4)
 
-        # ttk.Button(frame, text="Test Battle", command=lambda: self.app.handle_test_template("battle", "Battle")).pack(fill="x", padx=8, pady=4)
-        # ttk.Button(frame, text="Test Ready", command=lambda: self.app.handle_test_template("ready", "Ready")).pack(fill="x", padx=8, pady=4)
-        # ttk.Button(frame, text="Test Victory", command=lambda: self.app.handle_test_template("victory", "Victory")).pack(fill="x", padx=8, pady=4)
-        # ttk.Button(frame, text="Test Next Stage", command=lambda: self.app.handle_test_template("next_stage", "Next Stage")).pack(fill="x", padx=8, pady=4)
-        # ttk.Button(frame, text="Test Skip", command=lambda: self.app.handle_test_template("skip", "Skip")).pack(fill="x", padx=8, pady=4)
+        ttk.Button(
+            frame,
+            text="Open Game by Package",
+            command=self.app.handle_open_game_by_package
+        ).pack(fill="x", padx=8, pady=4)
+
+        ttk.Button(
+            frame,
+            text="Open Game by Icon",
+            command=self.app.handle_open_game_by_icon
+        ).pack(fill="x", padx=8, pady=4)
+
+        ttk.Button(
+            frame,
+            text="Save Screenshot",
+            command=self.app.handle_save_screenshot
+        ).pack(fill="x", padx=8, pady=4)
 
     def _build_group_bot(self, parent) -> None:
         frame = self._make_group(parent, "Bot")
-        ttk.Button(frame, text="Start Bot", command=self.app.handle_start_bot).pack(fill="x", padx=8, pady=4)
-        ttk.Button(frame, text="Stop Bot", command=self.app.handle_stop_bot).pack(fill="x", padx=8, pady=4)
+
+        row = tk.Frame(frame)
+        row.pack(fill="x", padx=8, pady=4)
+
+        tk.Label(row, text="Chức năng", width=12, anchor="w").pack(side="left")
+
+        feature_combo = ttk.Combobox(
+            row,
+            textvariable=self.app.var_feature_name,
+            state="readonly",
+            values=self.app.feature_names,
+        )
+        feature_combo.pack(side="left", fill="x", expand=True)
+
+        ttk.Button(
+            frame,
+            text="Start Chức Năng",
+            command=self.app.handle_start_bot
+        ).pack(fill="x", padx=8, pady=4)
+
+        ttk.Button(
+            frame,
+            text="Stop",
+            command=self.app.handle_stop_bot
+        ).pack(fill="x", padx=8, pady=4)
 
     def _build_group_settings(self, parent) -> None:
         frame = self._make_group(parent, "Cài đặt")
+
         self._entry_row(frame, "LDPlayer Path", self.app.var_ldplayer_path)
         self._entry_row(frame, "ADB Path", self.app.var_adb_path)
         self._entry_row(frame, "LDConsole", self.app.var_ldconsole_path)
@@ -115,7 +182,12 @@ class AutoToolUI:
         self._entry_row(frame, "Threshold", self.app.var_threshold)
         self._entry_row(frame, "Loop Delay", self.app.var_loop_delay)
         self._entry_row(frame, "Action Delay", self.app.var_action_delay)
-        ttk.Button(frame, text="Save Config", command=self.app.handle_save_config).pack(fill="x", padx=8, pady=8)
+
+        ttk.Button(
+            frame,
+            text="Save Config",
+            command=self.app.handle_save_config
+        ).pack(fill="x", padx=8, pady=8)
 
     def _entry_row(self, parent, label: str, variable) -> None:
         row = tk.Frame(parent)
