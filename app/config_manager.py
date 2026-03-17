@@ -42,6 +42,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "ready": "assets/images/ready.png",
     "exit": "assets/images/exit.png",
     "victory": "assets/images/victory.png",
+    "victorythap": "assets/images/victorythap.png",
     "next_stage": "assets/images/next_stage.png",
     "skip": "assets/images/skip.png"
 }, 
