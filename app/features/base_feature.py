@@ -22,8 +22,6 @@ class BaseFeature:
         self.threshold = 0.75
         self.after_click_delay = 0.35
 
-    # ===== Core =====
-
     def log(self, msg: str):
         self.logger(msg)
 
@@ -34,15 +32,11 @@ class BaseFeature:
     def set_image_dir(self, image_dir: str):
         self.image_dir = Path(image_dir)
 
-    # ===== Utils =====
-
     def img(self, name: str) -> str:
         return str(self.image_dir / f"{name}.png")
 
     def capture(self):
         return self.adb.screencap()
-
-    # ===== Core action =====
 
     def tap_if_found(self, screen, name: str, extra_wait: float = 0.0) -> bool:
         path = self.img(name)
@@ -61,7 +55,6 @@ class BaseFeature:
             return False
 
         self.adb.tap(match.x, match.y)
-
         self.log(
             f"[{self.name}] [{name}] click ({match.x},{match.y}) score={match.score:.3f}"
         )
@@ -74,12 +67,40 @@ class BaseFeature:
 
         return True
 
-    # ===== Action Runner =====
+    def any_template_found(self, screen, names: list[str]) -> bool:
+        for name in names:
+            path = self.img(name)
+
+            if not Path(path).exists():
+                continue
+
+            try:
+                match = find_template(screen, path, threshold=self.threshold)
+            except Exception:
+                continue
+
+            if match:
+                return True
+
+        return False
+
+    def tap_cancel_if_safe(
+        self,
+        screen,
+        cancel_name: str = "cancel",
+        block_if_found: list[str] | None = None,
+        extra_wait: float = 0.0,
+    ) -> bool:
+        if block_if_found is None:
+            block_if_found = []
+
+        if self.any_template_found(screen, block_if_found):
+            self.log(f"[{self.name}] còn nút khác, chưa bấm [{cancel_name}]")
+            return False
+
+        return self.tap_if_found(screen, cancel_name, extra_wait=extra_wait)
 
     def run_actions(self, actions: List[Tuple[str, float]]) -> bool:
-        """
-        actions = [("name", wait_time)]
-        """
         try:
             screen = self.capture()
         except Exception as e:
@@ -91,8 +112,6 @@ class BaseFeature:
                 return True
 
         return False
-
-    # ===== Override =====
 
     def run_once(self) -> bool:
         raise NotImplementedError

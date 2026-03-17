@@ -22,7 +22,7 @@ def extract_features(img):
 
 X, y = [], []
 
-for label in ["current", "completed", "normal"]:
+for label in ["completed", "normal"]:
     path = os.path.join(DATASET_DIR, label)
 
     if not os.path.exists(path):

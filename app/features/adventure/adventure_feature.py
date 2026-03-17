@@ -17,7 +17,7 @@ class AdventureFeature(BaseFeature):
 
         # ===== UI flow trước =====
         priority = [
-           ("skip", 0),
+            ("skip", 0),
             ("next_stage", 0),
             ("exit", 0),
             ("victory", 0),
@@ -29,7 +29,6 @@ class AdventureFeature(BaseFeature):
             ("up", 0),
             ("dots", 0),
             ("dot", 10),
-            ("cancel", 5),
         ]
 
         for name, wait in priority:
@@ -45,10 +44,31 @@ class AdventureFeature(BaseFeature):
 
             self.adb.tap(cx, cy)
 
-            self.log(
-                f"[AI] chọn ải: {node.state} ({cx},{cy})"
-            )
+            self.log(f"[AI] chọn ải: {node.state} ({cx},{cy})")
+            return True
 
+        # ===== Chỉ bấm cancel khi xung quanh / trên màn hình không còn nút khác =====
+        block_cancel_if_found = [
+            "skip",
+            "next_stage",
+            "exit",
+            "victory",
+            "claim",
+            "tap",
+            "battle1",
+            "ready",
+            "battle",
+            "up",
+            "dots",
+            "dot",
+        ]
+
+        if self.tap_cancel_if_safe(
+            screen,
+            cancel_name="cancel",
+            block_if_found=block_cancel_if_found,
+            extra_wait=5,
+        ):
             return True
 
         return False
