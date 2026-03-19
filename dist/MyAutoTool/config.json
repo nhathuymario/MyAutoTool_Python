@@ -1,0 +1,51 @@
+{
+  "ldplayer_path": "E:\\LDPlayer\\LDPlayer9\\dnplayer.exe",
+  "adb_path": "",
+  "ldconsole_path": "E:\\LDPlayer\\LDPlayer9\\ldconsole.exe",
+  "window_title_keywords": [
+    "LDPlayer",
+    "dnplayer"
+  ],
+  "device_ip": "127.0.0.1",
+  "candidate_ports": [
+    5555,
+    5556,
+    5557
+  ],
+  "game_package": "",
+  "game_activity": "",
+  "scan_region": null,
+  "default_threshold": 0.75,
+  "loop_delay_seconds": 1.0,
+  "action_delay_seconds": 0.35,
+  "selected_feature": "adventure",
+  "auto_reconnect": true,
+  "templates": {
+    "game_icon": "assets/images/game_icon.png",
+    "level": "assets/images/level.png",
+    "level1": "assets/images/level1.png",
+    "claim": "assets/images/claim.png",
+    "cancel": "assets/images/cancel.png",
+    "up": "assets/images/up.png",
+    "tap": "assets/images/tap.png",
+    "dots": "assets/images/dots.png",
+    "dot": "assets/images/dot.png",
+    "level2": "assets/images/level2.png",
+    "level3": "assets/images/level3.png",
+    "level4": "assets/images/level4.png",
+    "level6": "assets/images/level6.png",
+    "battle": "assets/images/battle.png",
+    "battle1": "assets/images/battle1.png",
+    "ready": "assets/images/ready.png",
+    "exit": "assets/images/exit.png",
+    "victory": "assets/images/victory.png",
+    "victorythap": "assets/images/victorythap.png",
+    "next_stage": "assets/images/next_stage.png",
+    "skip": "assets/images/skip.png"
+  },
+  "features": {
+    "build": true,
+    "collect": true,
+    "upgrade": true
+  }
+}

@@ -2,19 +2,23 @@ from __future__ import annotations
 
 import threading
 import time
+from pathlib import Path
 from typing import Callable, Optional
 
 from app.adb_client import AdbClient
+from app.config_manager import resolve_image_dir, resolve_path
 from app.features import FEATURES
 
 LogFn = Callable[[str], None]
 
 
 class BotManager:
-    def __init__(self, adb: AdbClient, image_dir: str, logger: LogFn = print):
+    def __init__(self, adb: AdbClient, image_dir: str | None = None, logger: LogFn = print):
         self.adb = adb
         self.logger = logger
-        self.image_dir = image_dir
+
+        resolved_dir = self._resolve_image_dir(image_dir)
+        self.image_dir = str(resolved_dir)
 
         self.running = False
         self.thread: Optional[threading.Thread] = None
@@ -28,6 +32,23 @@ class BotManager:
 
         self.game_package = "com.devsisters.ck"
         self.game_activity = "com.devsisters.plugin.OvenUnityPlayerActivity"
+
+        self.log(f"[Bot] image_dir = {self.image_dir}")
+
+    def _resolve_image_dir(self, image_dir: str | None) -> Path:
+        """
+        Ưu tiên đường dẫn người dùng nhập nếu tồn tại.
+        Nếu sai hoặc rỗng thì fallback về đường dẫn resource tự dò.
+        """
+        if image_dir:
+            candidate = resolve_path(image_dir)
+            if candidate.exists() and candidate.is_dir():
+                return candidate
+
+            self.log(f"[Bot] image_dir không hợp lệ, fallback tự động: {candidate}")
+
+        auto_dir = resolve_image_dir()
+        return auto_dir
 
     def log(self, msg: str) -> None:
         self.logger(msg)
@@ -44,15 +65,19 @@ class BotManager:
         game_package: str,
         game_activity: str,
     ) -> None:
-        self.image_dir = image_dir
+        resolved_dir = self._resolve_image_dir(image_dir)
+
+        self.image_dir = str(resolved_dir)
         self.loop_delay = loop_delay
         self.action_delay = action_delay
         self.threshold = threshold
         self.game_package = game_package
         self.game_activity = game_activity
 
+        self.log(f"[Bot] configured image_dir = {self.image_dir}")
+
         if self.current_feature:
-            self.current_feature.set_image_dir(image_dir)
+            self.current_feature.set_image_dir(str(resolved_dir))
             self.current_feature.update_settings(
                 threshold=threshold,
                 after_click_delay=action_delay,
@@ -64,16 +89,21 @@ class BotManager:
         if not feature_cls:
             raise ValueError(f"Không tìm thấy feature: {feature_key}")
 
+        resolved_dir = self._resolve_image_dir(self.image_dir)
+        self.image_dir = str(resolved_dir)
+
         self.current_feature_key = feature_key
         self.current_feature = feature_cls(
             adb=self.adb,
-            image_dir=self.image_dir,
+            image_dir=str(resolved_dir),
             logger=self.logger,
         )
         self.current_feature.update_settings(
             threshold=self.threshold,
             after_click_delay=self.action_delay,
         )
+
+        self.log(f"[Bot] set feature '{feature_key}' với image_dir = {self.image_dir}")
 
     def start(self) -> None:
         if self.running:

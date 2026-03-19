@@ -22,10 +22,7 @@ class AutoToolApp:
 
         self.config = load_config()
 
-        default_adb_path = self.config.get(
-            "adb_path", r"E:\LDPlayer\LDPlayer9\adb.exe"
-        )
-
+        default_adb_path = self.config.get("adb_path", "") or ""
         default_image_dir = self.config.get(
             "image_dir",
             str(BASE_DIR / "assets" / "images")
@@ -43,21 +40,17 @@ class AutoToolApp:
         )
 
         self.var_ldplayer_path = tk.StringVar(
-            value=self.config.get("ldplayer_path", "")
+            value=self.config.get("ldplayer_path", "") or ""
         )
-
         self.var_adb_path = tk.StringVar(value=default_adb_path)
-
         self.var_ldconsole_path = tk.StringVar(
-            value=self.config.get("ldconsole_path", "")
+            value=self.config.get("ldconsole_path", "") or ""
         )
-
         self.var_image_dir = tk.StringVar(value=default_image_dir)
 
         self.var_game_package = tk.StringVar(
             value=self.config.get("game_package", "com.devsisters.ck")
         )
-
         self.var_game_activity = tk.StringVar(
             value=self.config.get(
                 "game_activity",
@@ -68,11 +61,9 @@ class AutoToolApp:
         self.var_threshold = tk.DoubleVar(
             value=float(self.config.get("default_threshold", 0.75))
         )
-
         self.var_loop_delay = tk.DoubleVar(
             value=float(self.config.get("loop_delay_seconds", 1.0))
         )
-
         self.var_action_delay = tk.DoubleVar(
             value=float(self.config.get("action_delay_seconds", 0.35))
         )
@@ -80,7 +71,6 @@ class AutoToolApp:
         self.var_scan_region = tk.StringVar(
             value=self.region_to_string(self.config.get("scan_region"))
         )
-
         self.var_device_id = tk.StringVar(value="Chưa kết nối")
         self.var_feature_name = tk.StringVar(value=selected_feature_name)
 
@@ -90,7 +80,7 @@ class AutoToolApp:
         self.matcher = ImageMatcher()
 
         self.adb = AdbClient(
-            adb_path=self.var_adb_path.get().strip(),
+            adb_path=self.var_adb_path.get().strip() or None,
             logger=self.logger,
         )
 
@@ -149,7 +139,11 @@ class AutoToolApp:
     def sync_runtime_paths(self):
         self.ldplayer.ldplayer_path = self.var_ldplayer_path.get().strip()
         self.ldplayer.ldconsole_path = self.var_ldconsole_path.get().strip()
-        self.adb.adb_path = self.var_adb_path.get().strip()
+
+        # Quan trọng: nếu ô adb path rỗng thì truyền None để AdbClient tự fallback
+        self.adb.adb_path = self.adb._resolve_adb_path(
+            self.var_adb_path.get().strip() or None
+        )
 
         self.bot.configure(
             image_dir=self.var_image_dir.get().strip(),
@@ -160,9 +154,10 @@ class AutoToolApp:
             game_activity=self.var_game_activity.get().strip(),
         )
 
+        self.logger(f"[ADB] Runtime path: {self.adb.adb_path}")
+
     def handle_open_ldplayer(self):
         self.sync_runtime_paths()
-
         ok = self.ldplayer.open_ldplayer()
 
         if ok:
@@ -177,8 +172,24 @@ class AutoToolApp:
 
     def handle_connect_adb(self):
         self.sync_runtime_paths()
-        device = self.adb.auto_connect()
-        self.var_device_id.set(device or "Chưa kết nối")
+
+        try:
+            device = self.adb.auto_connect(
+                device_ip=self.config.get("device_ip", "127.0.0.1"),
+                candidate_ports=self.config.get(
+                    "candidate_ports",
+                    [5555, 5556, 5557, 5558, 5559, 5565, 5575]
+                ),
+            )
+            self.var_device_id.set(device or "Chưa kết nối")
+
+            if device:
+                self.logger(f"[ADB] Đã kết nối: {device}")
+            else:
+                self.logger("[ADB] Không kết nối được tới LDPlayer.")
+        except Exception as e:
+            self.var_device_id.set("Chưa kết nối")
+            self.logger(f"[ADB] Lỗi connect: {e}")
 
     def ensure_connected(self):
         if self.adb.device_id:
@@ -203,6 +214,8 @@ class AutoToolApp:
 
             if result.returncode == 0:
                 self.logger("[Game] Game started")
+            else:
+                self.logger(f"[Game] stderr={result.stderr}")
 
         except Exception as e:
             self.logger(f"[Game] lỗi mở game: {e}")
@@ -211,25 +224,28 @@ class AutoToolApp:
         if not self.ensure_connected():
             return
 
-        screen = self.adb.screencap()
-        template = self.config.get("templates", {}).get("game_icon")
+        try:
+            screen = self.adb.screencap()
+            template = self.config.get("templates", {}).get("game_icon")
 
-        if not template:
-            self.logger("Thiếu template game_icon")
-            return
+            if not template:
+                self.logger("Thiếu template game_icon")
+                return
 
-        match = self.matcher.find_template(
-            screen_bgr=screen,
-            template_path=template,
-            threshold=self.var_threshold.get()
-        )
+            match = self.matcher.find_template(
+                screen_bgr=screen,
+                template_path=template,
+                threshold=self.var_threshold.get()
+            )
 
-        if not match:
-            self.logger("Không tìm thấy icon game")
-            return
+            if not match:
+                self.logger("Không tìm thấy icon game")
+                return
 
-        self.adb.tap(match.x, match.y)
-        self.logger(f"Click icon game {match.x},{match.y}")
+            self.adb.tap(match.x, match.y)
+            self.logger(f"Click icon game {match.x},{match.y}")
+        except Exception as e:
+            self.logger(f"[Game] lỗi open by icon: {e}")
 
     def handle_save_screenshot(self):
         if not self.ensure_connected():
@@ -255,21 +271,22 @@ class AutoToolApp:
             self.logger(f"Thiếu template {key}")
             return
 
-        screen = self.adb.screencap()
+        try:
+            screen = self.adb.screencap()
 
-        match = self.matcher.find_template(
-            screen_bgr=screen,
-            template_path=template,
-            threshold=self.var_threshold.get()
-        )
+            match = self.matcher.find_template(
+                screen_bgr=screen,
+                template_path=template,
+                threshold=self.var_threshold.get()
+            )
 
-        if not match:
-            self.logger(f"{label} not found")
-            return
+            if not match:
+                self.logger(f"{label} not found")
+                return
 
-        self.logger(
-            f"{label} found {match.x},{match.y} score={match.score:.3f}"
-        )
+            self.logger(f"{label} found {match.x},{match.y} score={match.score:.3f}")
+        except Exception as e:
+            self.logger(f"[Template] lỗi test {label}: {e}")
 
     def handle_start_bot(self):
         if not self.ensure_connected():
@@ -304,7 +321,10 @@ class AutoToolApp:
             region = self.safe_region()
 
             selected_name = self.var_feature_name.get().strip()
-            selected_feature_key = self.feature_name_to_key.get(selected_name, "adventure")
+            selected_feature_key = self.feature_name_to_key.get(
+                selected_name,
+                "adventure"
+            )
 
             self.config["ldplayer_path"] = self.var_ldplayer_path.get().strip()
             self.config["adb_path"] = self.var_adb_path.get().strip()
@@ -332,7 +352,6 @@ def run_app():
     def on_close():
         if app.bot.is_running():
             app.bot.stop()
-
         root.destroy()
 
     root.protocol("WM_DELETE_WINDOW", on_close)
