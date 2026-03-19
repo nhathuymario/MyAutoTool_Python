@@ -7,9 +7,9 @@ import win32gui
 from app.features.base_feature import BaseFeature
 
 
-class AdventureFeature(BaseFeature):
+class AdventureNormal(BaseFeature):
     key = "adventure"
-    name = "Vượt ải"
+    name = "Vượt ải Dark"
 
     def __init__(self, adb, image_dir, logger=print):
         super().__init__(adb, image_dir, logger)
@@ -90,15 +90,11 @@ class AdventureFeature(BaseFeature):
             ("battle", 2),
             ("battle1", 2),
             ("ready", 2),
+            ("ready1", 2),
             ("victory", 2),
             ("tap", 1),
             ("up", 1),
-            ("level6", 0),
-            ("level4", 0),
-            ("level3", 0),
-            ("level2", 0),
-            ("level1", 0),
-            ("level", 0),
+            ("levelnormal", 1),
         ]
 
         for name, wait in priority:
