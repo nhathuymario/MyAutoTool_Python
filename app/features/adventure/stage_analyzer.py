@@ -56,22 +56,22 @@ class StageAnalyzer:
 
         return nodes
 
-    def choose_best_node(self, screen) -> Optional[StageNode]:
-        nodes = self.analyze(screen)
+    # def choose_best_node(self, screen) -> Optional[StageNode]:
+    #     nodes = self.analyze(screen)
 
-        if not nodes:
-            return None
+    #     if not nodes:
+    #         return None
 
-        current = [n for n in nodes if n.state == "current"]
-        if current:
-            return current[0]
+    #     current = [n for n in nodes if n.state == "current"]
+    #     if current:
+    #         return current[0]
 
-        normal = [n for n in nodes if n.state == "normal"]
-        if normal:
-            return normal[0]
+    #     normal = [n for n in nodes if n.state == "normal"]
+    #     if normal:
+    #         return normal[0]
 
-        completed = [n for n in nodes if n.state == "completed"]
-        if completed:
-            return completed[0]
+    #     completed = [n for n in nodes if n.state == "completed"]
+    #     if completed:
+    #         return completed[0]
 
         return None

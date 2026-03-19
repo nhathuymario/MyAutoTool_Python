@@ -21,7 +21,8 @@ def find_template(
     screen: np.ndarray,
     template_path: str,
     threshold: float = 0.75,
-    gray: bool = False,
+    gray: bool = True,
+    zoom_scale: float = 1.0,
 ) -> Optional[MatchResult]:
     path = Path(template_path)
     if not path.exists():
@@ -34,9 +35,29 @@ def find_template(
     src = screen
     tpl = template
 
+    # Chuyển grayscale nếu bật
     if gray:
-        src = cv2.cvtColor(screen, cv2.COLOR_BGR2GRAY)
-        tpl = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
+        if len(src.shape) == 3:
+            src = cv2.cvtColor(src, cv2.COLOR_BGR2GRAY)
+        if len(tpl.shape) == 3:
+            tpl = cv2.cvtColor(tpl, cv2.COLOR_BGR2GRAY)
+
+    # Zoom ảnh xử lý để match dễ hơn
+    if zoom_scale != 1.0:
+        src = cv2.resize(
+            src,
+            None,
+            fx=zoom_scale,
+            fy=zoom_scale,
+            interpolation=cv2.INTER_LINEAR,
+        )
+        tpl = cv2.resize(
+            tpl,
+            None,
+            fx=zoom_scale,
+            fy=zoom_scale,
+            interpolation=cv2.INTER_LINEAR,
+        )
 
     result = cv2.matchTemplate(src, tpl, cv2.TM_CCOEFF_NORMED)
     _, max_val, _, max_loc = cv2.minMaxLoc(result)
@@ -44,13 +65,20 @@ def find_template(
     if max_val < threshold:
         return None
 
-    h, w = template.shape[:2]
+    h, w = tpl.shape[:2]
+
+    # Tọa độ tìm được đang ở ảnh đã zoom -> chia ngược về tọa độ thật
+    real_x = int((max_loc[0] + w // 2) / zoom_scale)
+    real_y = int((max_loc[1] + h // 2) / zoom_scale)
+    real_w = int(w / zoom_scale)
+    real_h = int(h / zoom_scale)
+
     return MatchResult(
-        x=max_loc[0] + w // 2,
-        y=max_loc[1] + h // 2,
+        x=real_x,
+        y=real_y,
         score=float(max_val),
-        width=w,
-        height=h,
+        width=real_w,
+        height=real_h,
     )
 
 
@@ -60,7 +88,8 @@ class ImageMatcher:
         screen=None,
         template_path: str = "",
         threshold: float = 0.75,
-        gray: bool = False,
+        gray: bool = True,
+        zoom_scale: float = 1.0,
         screen_bgr=None,
     ) -> Optional[MatchResult]:
         src = screen_bgr if screen_bgr is not None else screen
@@ -72,6 +101,7 @@ class ImageMatcher:
             template_path=template_path,
             threshold=threshold,
             gray=gray,
+            zoom_scale=zoom_scale,
         )
 
     def save_debug_image(self, screen, output_path: str) -> None:

@@ -22,12 +22,30 @@ class BaseFeature:
         self.threshold = 0.75
         self.after_click_delay = 0.35
 
+        # Bật grayscale để chỉ xét hình khối
+        self.use_gray = True
+
+        # Zoom ảnh xử lý trước khi match
+        self.zoom_scale = 1.5
+
     def log(self, msg: str):
         self.logger(msg)
 
-    def update_settings(self, threshold: float, after_click_delay: float):
+    def update_settings(
+        self,
+        threshold: float,
+        after_click_delay: float,
+        use_gray: bool | None = None,
+        zoom_scale: float | None = None,
+    ):
         self.threshold = threshold
         self.after_click_delay = after_click_delay
+
+        if use_gray is not None:
+            self.use_gray = use_gray
+
+        if zoom_scale is not None:
+            self.zoom_scale = zoom_scale
 
     def set_image_dir(self, image_dir: str):
         self.image_dir = Path(image_dir)
@@ -46,7 +64,13 @@ class BaseFeature:
             return False
 
         try:
-            match = find_template(screen, path, threshold=self.threshold)
+            match = find_template(
+                screen=screen,
+                template_path=path,
+                threshold=self.threshold,
+                gray=self.use_gray,
+                zoom_scale=self.zoom_scale,
+            )
         except Exception as e:
             self.log(f"[{self.name}] [{name}] match lỗi: {e}")
             return False
@@ -75,7 +99,13 @@ class BaseFeature:
                 continue
 
             try:
-                match = find_template(screen, path, threshold=self.threshold)
+                match = find_template(
+                    screen=screen,
+                    template_path=path,
+                    threshold=self.threshold,
+                    gray=self.use_gray,
+                    zoom_scale=self.zoom_scale,
+                )
             except Exception:
                 continue
 

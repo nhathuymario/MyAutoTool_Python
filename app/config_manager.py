@@ -36,7 +36,6 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "level2": "assets/images/level2.png",
     "level3": "assets/images/level3.png",
     "level4": "assets/images/level4.png",
-    "level5": "assets/images/level5.png",
     "level6": "assets/images/level6.png",
     "battle": "assets/images/battle.png",
     "battle1": "assets/images/battle1.png",
