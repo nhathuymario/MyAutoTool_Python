@@ -1,0 +1,26 @@
+{
+  "ldplayer_path": "E:\\LDPlayer\\LDPlayer9\\dnplayer.exe",
+  "adb_path": "",
+  "ldconsole_path": "E:\\LDPlayer\\LDPlayer9\\ldconsole.exe",
+  "window_title_keywords": ["LDPlayer", "dnplayer"],
+  "device_ip": "127.0.0.1",
+  "candidate_ports": [5555, 5556, 5557, 5558, 5559, 5565, 5575],
+  "game_package": "",
+  "game_activity": "",
+  "scan_region": null,
+  "default_threshold": 0.75,
+  "loop_delay_seconds": 1.0,
+  "action_delay_seconds": 0.35,
+  "auto_reconnect": true,
+  "templates": {
+    "build": "assets/images/build.png",
+    "collect": "assets/images/collect.png",
+    "upgrade": "assets/images/upgrade.png",
+    "game_icon": "assets/images/game_icon.png"
+  },
+  "features": {
+    "build": true,
+    "collect": true,
+    "upgrade": true
+  }
+}

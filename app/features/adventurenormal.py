@@ -8,7 +8,7 @@ from app.features.base_feature import BaseFeature
 
 
 class AdventureNormal(BaseFeature):
-    key = "adventure"
+    key = "adventure_normal"
     name = "Vượt ải Dark"
 
     def __init__(self, adb, image_dir, logger=print):
