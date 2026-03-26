@@ -79,6 +79,11 @@ DEFAULT_CONFIG: Dict[str, Any] = {
         "victorythap": "assets/images/victorythap.png",
         "next_stage": "assets/images/next_stage.png",
         "skip": "assets/images/skip.png",
+        "battlealliance": "assets/images/battlealliance.png",
+        "oke": "assets/images/oke.png",
+        "openchest": "assets/images/openchest.png",
+        "chest": "assets/images/chest.png",
+        "tap": "assets/images/tap.png",
     },
     "features": {
         "build": True,
